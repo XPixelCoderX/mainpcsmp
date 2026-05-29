@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Craft Network · void horizon</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  height: 100vh;
+  overflow: hidden;
+  font-family: Inter, sans-serif;
+  color: white;
+
+  background: linear-gradient(
+    -45deg,
+    #0b001f,
+    #120033,
+    #060a2a,
+    #001a33,
+    #1a003f,
+    #0a0020
+  );
+
+  background-size: 600% 600%;
+  animation: gradientMove 22s ease infinite;
+}
+
+@keyframes gradientMove {
+  0%   { background-position: 0% 50%; }
+  25%  { background-position: 50% 0%; }
+  50%  { background-position: 100% 50%; }
+  75%  { background-position: 50% 100%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* white grid overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 70px 70px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* cursor glow */
+.cursor-glow {
+  position: fixed;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(170, 140, 255, 0.9);
+  pointer-events: none;
+  filter: blur(8px);
+  transform: translate(-50%, -50%);
+  z-index: 999;
+}
+
+/* mouse particles (slow drifting dust) */
+.particle {
+  position: fixed;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(220, 210, 255, 0.75);
+  pointer-events: none;
+  z-index: 999;
+  animation: drift 3s ease-out forwards;
+}
+
+@keyframes drift {
+  0% {
+    opacity: 0.8;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+      calc(var(--dx) * 50px),
+      calc(var(--dy) * 50px)
+    ) scale(0.5);
+  }
+}
+
+.container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.title {
+  font-size: 30px;
+  letter-spacing: 4px;
+  background: linear-gradient(90deg, #fff, #bca7ff, #7aa2ff);
+  -webkit-background-clip: text;
+  color: transparent;
+  margin-bottom: 20px;
+}
+
+.status {
+  font-size: 14px;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+  opacity: 0.9;
+}
+
+.status.online {
+  color: #35ff8a;
+  text-shadow: 0 0 12px rgba(53,255,138,0.5);
+}
+
+.status.offline {
+  color: #ff4d4d;
+  text-shadow: 0 0 12px rgba(255,77,77,0.5);
+}
+
+.ip {
+  font-family: monospace;
+  opacity: 0.7;
+  margin-top: 6px;
+}
+
+.buttons {
+  margin-top: 40px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+button {
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(10,10,30,0.4);
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+  backdrop-filter: blur(6px);
+}
+
+button:hover {
+  transform: translateY(-2px);
+  border-color: #a78bff;
+  box-shadow: 0 0 20px rgba(140,100,255,0.25);
+}
+
+.copy-msg {
+  margin-top: 20px;
+  opacity: 0;
+  transition: 0.2s;
+  color: #d8d8ff;
+}
+
+.copy-msg.show {
+  opacity: 1;
+}
+</style>
+</head>
+
+<body>
+
+<div class="cursor-glow" id="cursor"></div>
+
+<div class="container">
+  <div class="title">PIXEL CRAFT NETWORK</div>
+
+  <div id="status" class="status offline">OFFLINE</div>
+
+  <div class="ip">pcsmp.net</div>
+
+  <div class="buttons">
+    <button onclick="window.location.href='https://pay.pcsmp.net'">STORE</button>
+    <button onclick="window.location.href='https://status.pcsmp.net'">PLAYER COUNT</button>
+    <button onclick="window.location.href='https://discord.gg/jqPt6a563h'">DISCORD</button>
+    <button onclick="copyIP()">COPY IP</button>
+  </div>
+
+  <div class="copy-msg" id="copyMsg">copied to clipboard!</div>
+</div>
+
+<script>
+// cursor glow
+const cursor = document.getElementById("cursor");
+
+document.addEventListener("mousemove", (e) => {
+  cursor.style.left = e.clientX + "px";
+  cursor.style.top = e.clientY + "px";
+
+  // limited particle spawn
+  if (Math.random() > 0.65) return;
+
+  const p = document.createElement("div");
+  p.className = "particle";
+  p.style.left = e.clientX + "px";
+  p.style.top = e.clientY + "px";
+
+  const angle = Math.random() * Math.PI * 2;
+  p.style.setProperty("--dx", Math.cos(angle));
+  p.style.setProperty("--dy", Math.sin(angle));
+
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 3000);
+});
+
+// server status
+async function fetchStatus() {
+  try {
+    const res = await fetch('https://api.mcsrvstat.us/2/play.pcsmp.net');
+    const data = await res.json();
+
+    const el = document.getElementById('status');
+
+    if (data.online) {
+      el.textContent = "ONLINE";
+      el.className = "status online";
+    } else {
+      el.textContent = "OFFLINE";
+      el.className = "status offline";
+    }
+  } catch {
+    const el = document.getElementById('status');
+    el.textContent = "OFFLINE";
+    el.className = "status offline";
+  }
+}
+
+// copy ip
+function copyIP() {
+  navigator.clipboard.writeText("pcsmp.net");
+
+  const msg = document.getElementById("copyMsg");
+  msg.classList.add("show");
+
+  setTimeout(() => msg.classList.remove("show"), 1500);
+}
+
+fetchStatus();
+setInterval(fetchStatus, 30000);
+</script>
+
+</body>
+</html>
